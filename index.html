@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stylish Blog</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f44f; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, textarea, button { width: 100%; margin: 10px 0; padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .blog-post { padding: 15px; margin: 10px 0; border-radius: 5px; box-shadow: 0 0 5px rgba(0,0,0,0.1); position: relative; }
+        img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
+        .delete-btn { background-color: #14eded; color: white; border: none; padding: 5px 10px; cursor: pointer; position: absolute; top: 10px; right: 10px; }
+        .delete-btn:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="signupSection">
+            <h2>Sign Up</h2>
+            <input type="text" id="signupUsername" placeholder="Enter your name">
+            <input type="password" id="signupPassword" placeholder="Enter password">
+            <button onclick="signup()">Sign Up</button>
+            <p>Already have an account? <a href="#" onclick="showLoginSection()">Login here</a></p>
+        </div>
+
+        <div id="loginSection" style="display:none;">
+            <h2>Login</h2>
+            <input type="text" id="loginUsername" placeholder="Enter your name">
+            <input type="password" id="loginPassword" placeholder="Enter password">
+            <button onclick="login()">Login</button>
+        </div>
+
+        <div id="blogSection" style="display:none;">
+            <h2>Welcome, <span id="userDisplay"></span>!</h2>
+            <button onclick="logout()">Logout</button>
+            <textarea id="blogContent" placeholder="Write your blog here..."></textarea>
+            <input type="file" id="blogImage" accept="image/*">
+            <input type="color" id="bgColor">
+            <button onclick="postBlog()">Post</button>
+            <div id="blogContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        function signup() {
+            const username = document.getElementById("signupUsername").value;
+            const password = document.getElementById("signupPassword").value;
+            if (username && password) {
+                localStorage.setItem("user", username);
+                localStorage.setItem("password", password);
+                alert("Signup successful! Please login.");
+                document.getElementById("signupSection").style.display = "none";
+                document.getElementById("loginSection").style.display = "block";
+            }
+        }
+
+        function login() {
+            const username = document.getElementById("loginUsername").value;
+            const password = document.getElementById("loginPassword").value;
+            if (username === localStorage.getItem("user") && password === localStorage.getItem("password")) {
+                showBlogSection();
+            } else {
+                alert("Invalid credentials!");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem("user");
+            document.getElementById("loginSection").style.display = "block";
+            document.getElementById("blogSection").style.display = "none";
+        }
+
+        function postBlog() {
+            const content = document.getElementById("blogContent").value;
+            const bgColor = document.getElementById("bgColor").value;
+            const imageInput = document.getElementById("blogImage");
+            let imageUrl = "";
+
+            if (imageInput.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    imageUrl = e.target.result;
+                    saveBlog(content, bgColor, imageUrl);
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else {
+                saveBlog(content, bgColor, imageUrl);
+            }
+        }
+
+        function saveBlog(content, bgColor, imageUrl) {
+            if (!content) return;
+            const blogData = JSON.parse(localStorage.getItem("blogs")) || [];
+            blogData.push({ content, bgColor, imageUrl, author: localStorage.getItem("user") });
+            localStorage.setItem("blogs", JSON.stringify(blogData));
+            document.getElementById("blogContent").value = "";
+            document.getElementById("blogImage").value = "";
+            loadBlogs();
+        }
+
+        function loadBlogs() {
+            const blogContainer = document.getElementById("blogContainer");
+            blogContainer.innerHTML = "";
+            const blogData = JSON.parse(localStorage.getItem("blogs")) || [];
+            
+            blogData.forEach((blog, index) => {
+                const div = document.createElement("div");
+                div.className = "blog-post";
+                div.style.backgroundColor = blog.bgColor;
+                div.innerHTML = `<p>${blog.content}</p><small>By ${blog.author}</small>`;
+                if (blog.imageUrl) {
+                    const img = document.createElement("img");
+                    img.src = blog.imageUrl;
+                    div.appendChild(img);
+                }
+                const deleteBtn = document.createElement("button");
+                deleteBtn.innerText = "Delete";
+                deleteBtn.className = "delete-btn";
+                deleteBtn.onclick = () => deleteBlog(index);
+                div.appendChild(deleteBtn);
+                blogContainer.appendChild(div);
+            });
+        }
+
+        function deleteBlog(index) {
+            const blogData = JSON.parse(localStorage.getItem("blogs")) || [];
+            blogData.splice(index, 1);
+            localStorage.setItem("blogs", JSON.stringify(blogData));
+            loadBlogs();
+        }
+
+        function showBlogSection() {
+            document.getElementById("loginSection").style.display = "none";
+            document.getElementById("blogSection").style.display = "block";
+            document.getElementById("userDisplay").innerText = localStorage.getItem("user");
+            loadBlogs();
+        }
+    </script>
+</body>
+</html>
